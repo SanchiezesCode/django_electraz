@@ -1,0 +1,361 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block css %}
+    <!-- Sweet Alert -->
+    <link href="{% static 'adminpanel/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Производители</h4>
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0" id="manufacturerproductTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Название производителя</th>
+                                <th>Страна</th>
+                                <th class="tabledit-toolbar-column"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Добавить производителя</h4>
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" aria-label="Название производителя" id="new_manufacturerproduct_name">
+                        <select class="form-select" id="new_manufacturerproduct_country">
+                            <option value="">Выберите страну</option>
+                            <!-- Options will be dynamically populated by JavaScript -->
+                        </select>
+                        <button class="btn input-group-text btn-secondary waves-effect waves-light" type="button" onclick="addManufacturer()">Добавить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<!-- Sweet Alerts js -->
+<script src="{% static 'adminpanel/libs/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+// Function to load manufacturers from API and populate the table
+function loadManufacturers() {
+    // Clear table before loading new data
+    $('#manufacturerproductTable tbody').empty();
+
+    // Execute GET request to API for manufacturers
+    $.ajax({
+        url: '/api/manufacturerproduct/', // Your API endpoint for manufacturers
+        type: 'GET',
+        success: function(manufacturers) {
+            // Execute GET request to API for countries
+            $.ajax({
+                url: '/api/country/', // Your API endpoint for countries
+                type: 'GET',
+                success: function(countries) {
+                    // Map country data to an object for easier access
+                    var countryMap = {};
+                    countries.forEach(function(country) {
+                        countryMap[country.id] = country.name;
+                    });
+
+                    // Populate table with manufacturer data
+                    manufacturers.forEach(function(manufacturer) {
+                        var countryName = countryMap[manufacturer.country]; // Get country name from countryMap
+
+                        // Build options for select element
+                        var options = '';
+                        countries.forEach(function(country) {
+                            options += '<option value="' + country.id + '"';
+                            if (country.id === manufacturer.country) {
+                                options += ' selected';
+                            }
+                            options += '>' + country.name + '</option>';
+                        });
+
+                        var row = '<tr>' +
+                            '<td>' + manufacturer.id + '</td>' +
+                            '<td>' +
+                            '<span class="tabledit-span">' + manufacturer.name + '</span>' +
+                            '<input class="tabledit-input form-control form-control-sm" type="text" name="col1" value="' + manufacturer.name + '" style="display: none;">' +
+                            '</td>' +
+                            '<td>' +
+                            '<span class="tabledit-span">' + (countryName ? countryName : 'Undefined') + '</span>' +
+                            '<select class="tabledit-select form-control form-control-sm" style="display: none;">' +
+                            options +
+                            '</select>' +
+                            '</td>' + // Display country name
+                            '<td>' +
+                            '<a href="javascript:void(0);" class="action-icon" onclick="toggleManufacturerEditMode(this)"> <i class="mdi mdi-square-edit-outline"></i></a>' +
+                            '<a href="javascript:void(0);" class="action-icon" onclick="deleteManufacturerRow(this)"> <i class="mdi mdi-delete"></i></a>' +
+                            '</td>' +
+                            '</tr>';
+                        $('#manufacturerproductTable tbody').append(row);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading countries:', error);
+                }
+            });
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading manufacturers:', error);
+        }
+    });
+}
+
+
+// Function to load countries from API and populate the select element
+function loadCountries() {
+    $.ajax({
+        url: '/api/country/', // Your API endpoint for countries
+        type: 'GET',
+        success: function(response) {
+            response.forEach(function(country) {
+                var option = '<option value="' + country.id + '">' + country.name + '</option>';
+                $('#new_manufacturerproduct_country').append(option);
+            });
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading countries:', error);
+        }
+    });
+}
+
+// Call loadManufacturers function when the page is ready
+$(document).ready(function() {
+    loadManufacturers();
+    loadCountries();
+});
+
+// Function to add a new manufacturer
+function addManufacturer() {
+    var name = $('#new_manufacturerproduct_name').val().trim();
+    var country = $('#new_manufacturerproduct_country').val();
+
+    // Check if name and country are not empty
+    if (name === "" || country === "") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Ошибка',
+            text: 'Пожалуйста, введите название производителя и выберите страну.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    // Проверяем, есть ли уже производитель с таким же названием в таблице
+    var manufacturerNames = $('#manufacturerproductTable tbody td:nth-child(2) .tabledit-span').map(function() {
+        return $(this).text().trim();
+    }).get();
+
+    if (manufacturerNames.includes(name)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Ошибка',
+            text: 'Производитель с таким названием уже существует.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    // Send POST request to API
+    $.ajax({
+        url: '/api/manufacturerproduct/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ name: name, country: country }),
+        success: function(response) {
+            // If successfully added, reload the table
+            loadManufacturers();
+            // Clear input fields
+            $('#new_manufacturerproduct_name').val('');
+            $('#new_manufacturerproduct_country').val('');
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ошибка',
+                text: 'Произошла ошибка при добавлении производителя.',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+}
+
+
+// Function to delete a manufacturer row
+function deleteManufacturerRow(btn) {
+    // Display confirmation dialog
+    Swal.fire({
+        title: 'Вы уверены?',
+        html: 'Вы действительно хотите удалить этого производителя?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Да, удалить',
+        cancelButtonText: 'Отмена'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            var row = $(btn).closest('tr');
+            var id = row.find('td:first').text(); // Get manufacturer id
+            row.remove();
+
+            // Send DELETE request to API
+            $.ajax({
+                url: '/api/manufacturerproduct/' + id + '/',
+                type: 'DELETE',
+                success: function(response) {
+                    Swal.fire(
+                        'Удалено!',
+                        'Производитель успешно удален.',
+                        'success'
+                    );
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ошибка',
+                        text: 'Произошла ошибка при удалении производителя.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        }
+    });
+}
+
+function toggleManufacturerEditMode(btn) {
+    var row = $(btn).closest('tr');
+    var cells = row.find('td');
+
+    // Проверяем, если в режиме редактирования пустое название производителя
+    var input = cells[1].getElementsByClassName('tabledit-input')[0];
+    var manufacturerName = input.value.trim();
+    if (manufacturerName === "") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Пустое название производителя',
+            text: 'Пожалуйста, введите название производителя.',
+            confirmButtonText: 'OK'
+        }).then((result) => {
+            // При нажатии на кнопку "OK" установим текущее значение span в input
+            if (result.isConfirmed) {
+                var span = cells[1].getElementsByClassName('tabledit-span')[0];
+                input.value = span.textContent;
+            }
+        });
+        return; // Выходим из функции, чтобы не обновлять строку с пустым значением 
+    }
+
+    // Проверяем, находится ли ячейка в режиме редактирования
+    var isInEditMode = $(cells[1]).find('.tabledit-input').is(':visible');
+    if (isInEditMode) {
+        // Получаем значения до редактирования
+        var originalName = row.find('td:nth-child(2) .tabledit-span').text().trim();
+        var originalCountry = row.find('td:nth-child(3) .tabledit-span').text().trim(); // Изменено
+
+        // Проверяем, изменилось ли название и/или страна
+        var nameChanged = (manufacturerName !== originalName);
+        var countryChanged = (row.find('td:nth-child(3) select option:selected').text().trim() !== originalCountry); // Изменено
+
+        // Проверяем наличие дубликатов в столбце
+        var duplicate = false;
+        var columnIndex = 1; // Индекс столбца с названием производителя (нумерация с 0)
+        var allRows = row.closest('table').find('tbody tr');
+        allRows.each(function(index, row) {
+            if (row !== btn.closest('tr')) {
+                var cell = $(row).find('td').eq(columnIndex);
+                var span = cell.find('.tabledit-span');
+                var cellManufacturerName = span.text().trim();
+                if (cellManufacturerName === manufacturerName) {
+                    duplicate = true;
+                    return false; // Прерываем цикл, так как дубликат найден
+                }
+            }
+        });
+
+        if (duplicate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ошибка',
+                text: 'Производитель с таким названием уже существует.',
+                confirmButtonText: 'OK'
+            }).then((result) => {
+                // При нажатии на кнопку "OK" возвращаем предыдущее значение
+                if (result.isConfirmed) {
+                    var span = cells[1].getElementsByClassName('tabledit-span')[0];
+                    input.value = span.textContent;
+                }
+            });
+            return;
+        }
+
+        if (nameChanged || countryChanged) {
+    var manufacturerId = row.find('td:first-child').text().trim(); // Получаем ID производителя
+    var newName = manufacturerName; // Новое название производителя
+    var currentCountryId = row.find('td:nth-child(3) select').val(); // Получаем ID текущей страны
+
+    // Отправляем PUT запрос для изменения названия производителя
+    $.ajax({
+        url: '/api/manufacturerproduct/' + manufacturerId + '/', // Добавляем слеш в конце URL
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ name: newName, country: currentCountryId }), // Передаем новое название и текущий идентификатор страны
+        success: function(response) {
+            console.log('PUT request success:', response);
+        },
+        error: function(xhr, status, error) {
+            console.error('PUT request error:', error);
+        }
+    });
+}
+
+    }
+
+    // Переключаем режим редактирования для каждой ячейки в строке
+    cells.each(function(index, cell) {
+        var span = $(cell).find('.tabledit-span');
+        var input = $(cell).find('.tabledit-input');
+        var select = $(cell).find('.tabledit-select');
+        var selectSpan = row.find('td:nth-child(3) .tabledit-span');
+
+        if (span.css('display') === 'none') {
+            span.show();
+            input.hide();
+            select.hide();
+            selectSpan.text(select.find('option:selected').text());
+            span.text(input.val());
+        } else {
+            span.hide();
+            input.show();
+            select.show();
+            input.val(span.text());
+        }
+    });
+}
+
+
+
+
+
+
+
+
+</script>
+{% endblock %}

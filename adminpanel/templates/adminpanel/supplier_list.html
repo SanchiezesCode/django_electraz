@@ -1,0 +1,324 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block css %}
+    <!-- Sweet Alert -->
+    <link href="{% static 'adminpanel/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Список поставщиков</h4>
+                <div class="table-responsive">
+                    <table class="table table-centered table-nowrap mb-0" id="supplierTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Название поставщика</th>
+                                <th>Ссылка</th>
+                                <th class="tabledit-toolbar-column"></th>
+                            </tr>
+                        </thead>
+                    
+                        <tbody>
+                            <!-- Здесь будут отображаться поставщики -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Добавить поставщика</h4>
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" aria-label="Название поставщика" id="new_supplier_name">
+                        <input type="text" class="form-control" aria-label="Ссылка" id="new_supplier_link">
+                        <button class="btn input-group-text btn-secondary waves-effect waves-light" type="button" onclick="addSupplier()">Добавить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+    <!-- Sweet Alerts js -->
+    <script src="{% static 'adminpanel/libs/sweetalert2/sweetalert2.all.min.js' %}"></script>
+    
+    <!-- Your additional scripts here -->
+    <script src="{% static 'adminpanel/js/tabledit.init.js' %}"></script>
+
+    <script>
+        function loadSuppliers() {
+            // Очищаем таблицу перед загрузкой новых данных
+            $('#supplierTable tbody').empty();
+
+            // Выполняем GET запрос к API
+            $.ajax({
+                url: '/api/supplier/', // Адрес вашего API для поставщиков
+                type: 'GET',
+                success: function(response) {
+                    // При успешном запросе добавляем данные в таблицу
+                    response.forEach(function(supplier) {
+                        var row = '<tr>' +
+                                      '<td>' + supplier.id + '</td>' +
+                                      '<td>' +
+                                          '<span class="tabledit-span">' + supplier.name + '</span>' +
+                                          '<input class="tabledit-input form-control form-control-sm" type="text" name="col1" value="' + supplier.name + '" style="display: none;">' +
+                                      '</td>';
+                        // Проверяем, если ссылка не пустая, то добавляем ее как кликабельную ссылку
+                        if (supplier.link !== "") {
+                            row += '<td>' +
+                                      '<span class="tabledit-span"><a href="' + supplier.link + '" target="_blank">' + supplier.link + '</a></span>' +
+                                      '<input class="tabledit-input form-control form-control-sm" type="text" name="col2" value="' + supplier.link + '" style="display: none;">' +
+                                  '</td>';
+                        } else {
+                            row += '<td>' +
+                                      '<span class="tabledit-span">' + supplier.link + '</span>' +
+                                      '<input class="tabledit-input form-control form-control-sm" type="text" name="col2" value="' + supplier.link + '" style="display: none;">' +
+                                  '</td>';
+                        }
+                        row += '<td>' +
+                                  '<a href="javascript:void(0);" class="action-icon" onclick="toggleEditMode(this)"> <i class="mdi mdi-square-edit-outline"></i></a>' +
+                                  '<a href="javascript:void(0);" class="action-icon" onclick="deleteRow(this)"> <i class="mdi mdi-delete"></i></a>' +
+                              '</td>' +
+                          '</tr>';
+                        $('#supplierTable tbody').append(row);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    // В случае ошибки выводим сообщение
+                    console.error('Error loading suppliers:', error);
+                }
+            });
+        }
+
+        // Вызываем функцию для загрузки данных при загрузке страницы
+        $(document).ready(function() {
+            loadSuppliers();
+        });
+
+        function addSupplier() {
+            // Получаем значения из полей ввода
+            var supplierName = document.getElementById('new_supplier_name').value.trim();
+            var supplierLink = document.getElementById('new_supplier_link').value.trim();
+            
+            // Проверяем, не пустые ли значения
+            if (supplierName === "") {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Пустое название поставщика',
+                    text: 'Пожалуйста, введите название поставщика.',
+                    confirmButtonText: 'OK'
+                });
+                return; // Выходим из функции, чтобы не добавлять пустую строку
+            }
+
+            // Проверяем, если поле ссылки не пустое, то проверяем на корректность ссылки
+            if (supplierLink !== "") {
+                var urlPattern = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
+                if (!supplierLink.match(urlPattern)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Некорректная ссылка',
+                        text: 'Пожалуйста, введите корректную ссылку.',
+                        confirmButtonText: 'OK'
+                    });
+                    return; // Выходим из функции, чтобы не добавлять строку с некорректной ссылкой
+                }
+            }
+
+            // Проверяем, не является ли новый поставщик дубликатом
+            var table = document.getElementById("supplierTable").getElementsByTagName('tbody')[0];
+            var rows = table.getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var cells = row.getElementsByTagName('td');
+                var existingSupplier = cells[1].getElementsByTagName('span')[0].innerText.trim();
+                if (existingSupplier === supplierName) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Дублирующееся название поставщика',
+                        text: 'Такой поставщик уже существует в таблице.',
+                        confirmButtonText: 'OK'
+                    });
+                    return; // Выходим из функции, чтобы не добавлять дублирующегося поставщика
+                }
+            }
+
+            // Отправляем AJAX-запрос для добавления записи
+            $.ajax({
+                url: '/api/supplier/', // Адрес вашего API для поставщиков
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ name: supplierName, link: supplierLink }), // Отправляем данные в формате JSON
+                success: function(response) {
+                    // Если успешно добавлено, обновляем таблицу
+                    var row = table.insertRow(-1);
+                    var cell1 = row.insertCell(0);
+                    var cell2 = row.insertCell(1);
+                    var cell3 = row.insertCell(2);
+                    var cell4 = row.insertCell(3);
+                    cell1.style.width = "10%";
+                    cell3.style.width = "20%";
+                    cell1.innerHTML = "<span class='tabledit-span tabledit-identifier'>" + response.id + "</span>";
+                    cell2.innerHTML = "<span class='tabledit-span'>" + response.name + "</span><input class='tabledit-input form-control form-control-sm' type='text' name='col1' value='" + response.name + "' style='display: none;'>";
+                    // Проверяем, если ссылка не пустая, то добавляем ее как ссылку
+                    if (response.link !== "") {
+                        cell3.innerHTML = "<span class='tabledit-span'><a href='" + response.link + "' target='_blank'>" + response.link + "</a></span><input class='tabledit-input form-control form-control-sm' type='text' name='col2' value='" + (response.link || "") + "' style='display: none;'>";
+                    } else {
+                        cell3.innerHTML = "<span class='tabledit-span'>" + (response.link || "") + "</span><input class='tabledit-input form-control form-control-sm' type='text' name='col2' value='" + (response.link || "") + "' style='display: none;'>";
+                    }
+                    cell4.innerHTML = `
+                        <a href="javascript:void(0);" class="action-icon" onclick="toggleEditMode(this)"> <i class="mdi mdi-square-edit-outline"></i></a>
+                        <a href="javascript:void(0);" class="action-icon" onclick="deleteRow(this)"> <i class="mdi mdi-delete"></i></a>
+                    `;
+                    // Очищаем поля ввода
+                    document.getElementById('new_supplier_name').value = "";
+                    document.getElementById('new_supplier_link').value = "";
+                },
+                error: function(xhr, status, error) {
+                    // Если произошла ошибка, показываем сообщение об ошибке
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ошибка',
+                        text: 'Произошла ошибка при добавлении поставщика.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        }
+
+        function deleteRow(btn) {
+            // Отображаем всплывающее окно с предупреждением
+            Swal.fire({
+                title: 'Вы уверены?',
+                html: 'Вы действительно хотите удалить строку <br><strong>"' + btn.closest('tr').cells[1].innerText + '"</strong>?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Да, удалить',
+                cancelButtonText: 'Отмена'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Если пользователь подтвердил удаление, удаляем строку
+                    var row = btn.closest('tr');
+                    var id = row.cells[0].innerText; // Получаем id поставщика
+                    row.parentNode.removeChild(row);
+
+                    // Выполняем DELETE запрос к API для удаления записи из базы данных
+                    $.ajax({
+                        url: '/api/supplier/' + id + '/', // Адрес вашего API с id записи для удаления
+                        type: 'DELETE',
+                        success: function(response) {
+                            Swal.fire(
+                                'Удалено!',
+                                'Строка успешно удалена.',
+                                'success'
+                            );
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Ошибка',
+                                text: 'Произошла ошибка при удалении поставщика.',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function toggleEditMode(btn) {
+        var row = btn.closest('tr');
+        var cells = row.getElementsByTagName('td');
+        var hasChanges = false; // Флаг для отслеживания изменений
+
+        // Проходим по всем ячейкам строки и переключаем режим редактирования/просмотра
+        for (var i = 0; i < cells.length; i++) {
+            var span = cells[i].getElementsByClassName('tabledit-span')[0];
+            var input = cells[i].getElementsByClassName('tabledit-input')[0];
+            if (span && input) {
+                if (span.style.display === 'none') {
+                    // Переключаемся в режим просмотра
+                    span.style.display = '';
+                    input.style.display = 'none';
+                    // Присваиваем текст из поля ввода элементу span
+                    if (i == 1) {
+                        var newValue = input.value.trim();
+                        var oldValue = span.textContent.trim();
+                        if (newValue !== oldValue) {
+                            span.textContent = newValue;
+                            hasChanges = true; // Помечаем, что есть изменения
+                        }
+                    } else if (i == 2) {
+                        var newLink = input.value.trim();
+                        var oldLink = span.textContent.trim();
+                        if (newLink !== oldLink) {
+                            // Проверяем правильность URL
+                            if (newLink === '') {
+                                // Если ссылка пустая, удаляем ее
+                                span.textContent = ''; // Очищаем текст ссылки
+                                hasChanges = true; // Помечаем, что есть изменения
+                            } else if (!isValidURL(newLink)) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Неправильный формат ссылки',
+                                    text: 'Пожалуйста, введите ссылку в формате "http://www.example.com" или "https://www.example.com".',
+                                    confirmButtonText: 'OK'
+                                });
+                                return; // Выходим из функции, если ссылка имеет неправильный формат
+                            } else {
+                                span.innerHTML = "<a href='" + newLink + "' target='_blank'>" + newLink + "</a>";
+                                hasChanges = true; // Помечаем, что есть изменения
+                            }
+                        }
+                    }
+                } else {
+                    // Переключаемся в режим редактирования
+                    span.style.display = 'none';
+                    input.style.display = '';
+                    // Присваиваем значение из span обратно в поле ввода
+                    if (i == 1) {
+                        input.value = span.textContent;
+                    } else if (i == 2) {
+                        input.value = span.textContent;
+                    }
+                }
+            }
+        }
+
+        // Если есть изменения, отправляем PUT запрос для обновления данных на сервере
+        if (hasChanges) {
+            var supplierId = row.cells[0].innerText;
+            var supplierName = cells[1].getElementsByTagName('input')[0].value.trim();
+            var supplierLink = cells[2].getElementsByTagName('input')[0].value.trim();
+            $.ajax({
+                url: '/api/supplier/' + supplierId + '/', // Адрес вашего API для обновления данных
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ name: supplierName, link: supplierLink }), // Отправляем новые значения в формате JSON
+                success: function(response) {
+                    console.log('Данные успешно обновлены');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Произошла ошибка при обновлении данных:', error);
+                }
+            });
+        }
+    }
+        // Функция для проверки правильности URL
+        function isValidURL(url) {
+            var urlPattern = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
+            return url.match(urlPattern);
+        }
+
+    </script>
+{% endblock %}

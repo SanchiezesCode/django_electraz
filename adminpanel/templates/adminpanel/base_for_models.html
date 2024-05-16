@@ -1,0 +1,412 @@
+{% extends "adminpanel/base.html" %}
+{% load static %} {% load my_filters %} {% load widget_tweaks %}
+
+{% block css %}
+    <!-- Sweet Alert-->
+    <link href="{% static 'adminpanel/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Список {{model_name_verbose_name_table}}</h4>
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0" id="objectTable">
+                        <thead class="table-light">
+                            <tr>
+                                {% for key, value in columns_verbose.items %}
+                                    <th>{{ value|title }}</th>
+                                {% endfor %}
+                                {% if edit_columns is not None and edit_columns|length > 0 or is_deletable %}
+                                <th width="10%">Действия</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for object in objects %}
+                            <tr dj_id="{{object.0}}">
+                                {% if show_id == False %}
+                                {% for value in object|slice:"1:" %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            {% else %}
+                                {% for value in object %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            {% endif %}
+                                
+                                {% if edit_columns is not None and edit_columns|length > 0 or is_deletable %}
+                                    <td>
+                                        {% if edit_columns is not None and edit_columns|length > 0 %}
+                                            <a href="javascript:void(0);" class="action-icon edit-button" onclick="toggleEditMode(this)" data-bs-toggle="modal" data-bs-target="#con-close-modal" data-id="{{ object.id }}">
+                                                <i class="mdi mdi-square-edit-outline"></i>
+                                            </a>
+                                        {% endif %}
+                                        
+                                        {% if is_deletable %}
+                                            <a href="javascript:void(0);" class="action-icon delete-object" data-pk="{{ object.0 }}">
+                                                <i class="mdi mdi-delete"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        
+                        
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% if form %}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card">
+            <div class="card-body">
+                
+                <h4 class="mb-3 header-title">Добавить {{ model_name_verbose_name_table_add }}</h4>
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {% if field.field.required %}
+                            <span class="text-danger">*</span>
+                            {% endif  %}
+
+                            {% if field.field.widget.input_type == 'email' %}
+                                {{ field|add_attrs:"class: form-control, type: email" }}
+                            {% elif field.field.widget.input_type == 'url' %}
+                                {{ field|add_attrs:"class: form-control, type: url" }}
+                            {% elif field.field.widget.input_type == 'select' %}
+                                {{ field|add_attrs:"class: form-select" }}
+                            {% else %}
+                                {{ field|add_attrs:"class: form-control" }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary waves-effect waves-light">Добавить</button>
+                </form>
+
+
+            
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div id="con-close-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Редактирование данных</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="modal-body">
+                <!-- Динамически создаваемые поля формы будут здесь -->
+                <form id="edit-form" method="put">
+                    {% csrf_token %}
+                    {% for field in edit_form %}
+                    <div class="mb-3">
+                        
+                        <label class="form-label" for="edit_{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% if field.field.required %}
+                        <span class="text-danger">*</span>
+                        {% endif  %}
+                        {% with new_id='edit_'|add:field.auto_id %}
+                            {% render_field field class="form-control" id=new_id %}
+                        {% endwith %}
+                    </div>
+                {% endfor %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Закрыть</button>
+                <button type="submit" form="edit-form" id="save-changes-button" class="btn btn-info waves-effect waves-light">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block script %}
+<!-- Sweet Alerts js -->
+<script src="{% static 'adminpanel/libs/sweetalert2/sweetalert2.all.min.js' %}"></script>
+<script src="{% static 'adminpanel/js/tableedit.init.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопок удаления
+    var deleteButtons = document.querySelectorAll('.delete-object');
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            var objectRow = button.closest('tr');
+            {% if show_id %}
+            var objectName = objectRow.cells[1].textContent;
+            {% else %}
+            var objectName = objectRow.cells[0].textContent;
+            {% endif %}
+            console.log(objectName)
+            var pk = button.getAttribute('data-pk');
+
+            // Всплывающее окно для подтверждения удаления
+            Swal.fire({
+                title: 'Вы уверены?',
+                text: "Вы действительно хотите удалить '" + objectName + "'?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Да, удалить!',
+                cancelButtonText: 'Отмена'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Отправляем AJAX запрос на удаление
+                    fetch('', { // Пустая строка означает текущий URL
+                        method: 'DELETE', // Изменен метод запроса на DELETE
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest', // Для поддержки запросов AJAX в Django
+                            'X-CSRFToken': '{{ csrf_token }}' // Функция для получения CSRF токена
+                        },
+                        body: JSON.stringify({
+                            pk: pk
+                        })
+                    })
+                    .then(function(response) {
+                        return response.json(); // Обработка JSON ответа
+                    })
+                    .then(function(data) {
+                        if (data.message) {
+                            // Если удаление прошло успешно, обновляем страницу
+                            Swal.fire(
+                                'Удалено!',
+                                data.message, // Используем сообщение из ответа сервера
+                                'success'
+                            ).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            // Отображаем ошибку из ответа сервера
+                            Swal.fire(
+                                'Ошибка!',
+                                data.error,
+                                'error'
+                            );
+                        }
+                    })
+                    .catch(function(error) {
+                        // Отображаем ошибку AJAX запроса
+                        Swal.fire(
+                            'Ошибка!',
+                            'Ошибка при удалении объекта: ' + error,
+                            'error'
+                        );
+                    });
+                }
+            })
+        });
+    });
+});
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        fetch(form.action, {
+            method: form.method,
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest', // Для поддержки запросов AJAX в Django
+                'X-CSRFToken': '{{ csrf_token }}' // CSRF токен для безопасности
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('123')
+            console.log(data)
+            console.log('123')
+            if (data.status === 'success') {
+                // Если добавление прошло успешно, обновляем страницу
+                Swal.fire(
+                    'Добавлено!',
+                    'Запись была успешно добавлена.',
+                    'success'
+                ).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                console.log(data)
+                displayErrors(data);
+            }
+        })
+        .catch(error => {
+            Swal.fire(
+                'Ошибка!',
+                'Ошибка при добавлении записи: ' + error,
+                'error'
+            );
+        });
+    });
+});
+
+    </script>
+
+<script>
+
+
+// Функция для создания формы в модальном окне
+window.editColumns = {{ edit_columns|safe }};
+window.objects = {{ objects|safe }};
+window.field_types = {{ field_types|safe }};
+window.columns_verbose = {{ columns_verbose|safe }};
+
+window.rowDataGlobal = {}; 
+window.currentIdGlobal = 0;
+
+function displayErrors(response) {
+    var messageObject = JSON.parse(response.message);
+    var errors = Object.keys(messageObject).map(function(field) {
+        var verboseName = columns_verbose[field] || field;
+        verboseName = verboseName.charAt(0).toUpperCase() + verboseName.slice(1);
+        return '<strong>Ошибка в поле "' + verboseName + '":</strong><br>' + messageObject[field][0].message;
+    }).join('<br><br>');
+    
+    swal.fire({
+        title: "Обнаружены ошибки:",
+        html: errors,
+        icon: 'error'
+    });
+}
+
+function fillFormWithRowData() {
+  // Проверяем, существует ли глобальный объект с данными строки
+  if (rowDataGlobal) {
+    console.log(rowDataGlobal)
+    // Перебираем все ключи объекта rowDataGlobal
+    for (const key in rowDataGlobal) {
+      // Находим элемент формы, который соответствует ключу объекта
+      const input = document.querySelector(`#edit_id_${key}`);
+      console.log(input)
+      // Если элемент найден и не является undefined, устанавливаем его значение
+      if (input) {
+        console.log(rowDataGlobal[key])
+        input.value = rowDataGlobal[key];
+        console.log('gello' + input.value)
+      }
+    }
+  }
+}
+
+function toggleEditMode(button) {
+    var row = button.closest('tr'); // Находим ближайшую строку к кнопке
+    var rowData = {};
+
+    // Получаем заголовки столбцов таблицы
+    var headers = Array.from(document.querySelectorAll('#objectTable th')).map(function(th) {
+        return th.textContent.trim().toLowerCase(); // Приводим к нижнему регистру для сопоставления
+    });
+
+    // Итерируем по всем ячейкам строки
+    row.querySelectorAll('td:not(:last-child)').forEach(function(cell, index) {
+        var headerValue = headers[index];
+        // Используем объект columns_verbose для получения исходного названия поля по verbose_name
+        var fieldName = Object.keys(columns_verbose).find(key => columns_verbose[key].toLowerCase() === headerValue);
+        if (fieldName) {
+            rowData[fieldName] = cell.textContent; // Обновляем значения в объекте rowData
+        }
+    });
+
+    window.rowDataGlobal = rowData;
+    window.currentIdGlobal = row.getAttribute('dj_id');
+    fillFormWithRowData();
+}
+
+// Функция для проверки изменений данных в форме
+function getChangedData(rowData) {
+  var changedData = {};
+  // Используем селекторы для получения элементов формы по их динамическим id
+  Object.keys(rowData).forEach(function(columnName) {
+    var input = document.getElementById('edit_id_' + columnName);
+    if (input && input.value.trim() !== rowData[columnName]) {
+      changedData[columnName] = input.value.trim();
+    }
+  });
+  console.log('hello');
+  console.log(rowData);
+  console.log(changedData);
+  console.log('hello');
+  return changedData;
+}
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    var editForm = document.getElementById('edit-form');
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Получаем измененные данные, используя глобальные исходные данные
+        var changedData = getChangedData(rowDataGlobal);
+        
+        // Проверяем, есть ли изменения
+        if (Object.keys(changedData).length === 0) {
+            // Если изменений нет, закрываем модальное окно
+            var modalElement = document.querySelector('.modal');
+            var modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
+        } else {
+            // Если есть изменения, отправляем форму
+            var formData = new FormData(editForm);
+            // Добавляем измененные данные в formData
+            Object.keys(changedData).forEach(function(key) {
+                formData.set(key, changedData[key]);
+            });
+            // Добавляем id объекта в formData
+            formData.append('id', currentIdGlobal);
+            var xhr = new XMLHttpRequest();
+            // Используем тот же URL, что и для GET запроса
+            xhr.open('PUT', window.location.href, true);
+            xhr.setRequestHeader('X-CSRFToken', formData.get('csrfmiddlewaretoken'));
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Успех: вызываем swal с сообщением об успехе
+                    Swal.fire({
+                        title: 'Успех!',
+                        text: 'Форма успешно отправлена.',
+                        icon: 'success'
+                    }).then((result) => {
+                        if (result.value) {
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    var response = JSON.parse(xhr.responseText);
+                    displayErrors(response);
+                }
+            };
+            xhr.send(formData);
+        }
+    });
+});
+
+
+</script>
+
+{% endblock %}
+

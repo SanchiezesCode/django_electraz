@@ -1,0 +1,24 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+{% block content %}
+<script src="{% static 'adminpanel/libs/sweetalert2/sweetalert2.all.min.js' %}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        Swal.fire({
+            title: 'Вы уверены?',
+            text: "Вы действительно хотите удалить этого клиента?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Да, удалить!',
+            cancelButtonText: 'Отмена'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Перенаправление на URL для удаления клиента
+                window.location.href = "{{ delete_url }}";
+            }
+        });
+    });
+</script>
+{% endblock %}

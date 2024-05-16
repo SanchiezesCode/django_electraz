@@ -1,0 +1,137 @@
+{% extends "adminpanel/base.html" %} {% load static %}
+
+{% block content %}
+
+<div class="row">
+
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-uppercase mt-0 mb-3 bg-light p-2">Главное</h5>
+
+                <div class="mb-3">
+                    <label for="product-name" class="form-label">Название <span class="text-danger">*</span></label>
+                    <input type="text" id="product-name" class="form-control" placeholder="напр. : Изолента">
+                </div>
+
+                <div class="mb-3">
+                    <label for="product-category" class="form-label">Категория <span class="text-danger">*</span></label>
+                    <select class="form-control select2" id="product-category">
+                        <option>Выбрать</option>
+                        <option value="SH1">Shopping 1</option>
+                        <option value="SH2">Shopping 2</option>
+                        <option value="SH3">Shopping 3</option>
+                        <option value="SH4">Shopping 4</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="product-price">Цена <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="product-price" placeholder="Введите стоимость">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-uppercase mt-0 mb-3 bg-light p-2">Дополнительно</h5>
+
+                <div class="mb-3">
+                    <label for="product-description" class="form-label">Text area</label>
+                    <textarea class="form-control" id="product-description" rows="3" placeholder="Описание товара"></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-uppercase mt-0 mb-3 bg-light p-2">Meta данные</h5>
+
+                <div class="mb-3">
+                     <label for="product-meta-title" class="form-label">Meta title</label>
+                     <input type="text" class="form-control" id="product-meta-title" placeholder="Введите title">
+                 </div>
+
+                 <div class="mb-3">
+                     <label for="product-meta-keywords" class="form-label">Meta Keywords</label>
+                     <input type="text" class="form-control" id="product-meta-keywords" placeholder="Введите keywords">
+                 </div>
+
+                 <div>
+                     <label for="product-meta-description" class="form-label">Meta Description </label>
+                     <textarea class="form-control" rows="5" id="product-meta-description" placeholder="Введите description"></textarea>
+                 </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-xl-6">
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title">Dropzone File Upload</h4>
+
+                <script>
+                    Dropzone.autoDiscover = false;
+                    var myDropzone = new Dropzone("#myAwesomeDropzone", {
+                      url: "",
+                      autoProcessQueue: false,
+                      parallelUploads: 5,
+                      maxFiles: 5,
+                      addRemoveLinks: true
+                    });
+                  
+                    // Добавьте дополнительную логику по обработке файлов, если необходимо
+                  </script>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="file_field">
+    <input type="submit" value="Загрузить">
+</form>
+
+                <!-- Preview -->
+                <div class="dropzone-previews mt-3" id="file-previews"></div>
+
+            </div> <!-- end card-body-->
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-uppercase mt-0 mb-3 bg-light p-2">Стоимость</h5>
+
+                <div class="mb-1">
+                    <label for="product-url-provider">Ссылку на товар поставщика</label>
+                    <input type="text" class="form-control" id="product-url-provider" placeholder="Введите URL">
+                </div>
+
+                <div class="mb-3 col-md-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" aria-label="Стоимость у поставщика" readonly="" id="product-price-provider">
+                        <button class="btn input-group-text btn-secondary waves-effect waves-light" type="button">Обновить цену</button>
+                    </div>
+                </div>
+
+                <div class="mb-1">
+                    <label for="product-url-leroy">Ссылку на товар в Леруа</label>
+                    <input type="text" class="form-control" id="product-url-leroy" placeholder="Введите URL">
+                </div>
+
+                <div class="mb-3 col-md-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" aria-label="Стоимость в Леруа" readonly="" id="product-url-leroy">
+                        <button class="btn input-group-text btn-secondary waves-effect waves-light" type="button">Обновить цену</button>
+                    </div>
+                </div>
+
+            </div>
+        </div> <!-- end card -->
+
+
+    </div>
+
+</div>
+
+{% endblock%}

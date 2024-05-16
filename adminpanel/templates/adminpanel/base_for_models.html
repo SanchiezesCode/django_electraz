@@ -33,7 +33,7 @@
                                 {% endfor %}
                             {% else %}
                                 {% for value in object %}
-                                    <td>{{ value }}</td>
+                                <td{% if forloop.first %} id="ignore_id"{% endif %}>{{ value }}</td>
                                 {% endfor %}
                             {% endif %}
                                 
@@ -55,7 +55,6 @@
                             </tr>
                         {% endfor %}
                         
-                        
                         </tbody>
                     </table>
                 </div>
@@ -63,17 +62,17 @@
         </div>
     </div>
 </div>
-{% if form %}
+
+{% if add_form %}
 <div class="row">
     <div class="col-xl-12">
         <div class="card">
             <div class="card-body">
-                
                 <h4 class="mb-3 header-title">Добавить {{ model_name_verbose_name_table_add }}</h4>
 
-                <form method="post">
+                <form method="post" id="add-form">
                     {% csrf_token %}
-                    {% for field in form %}
+                    {% for field in add_form %}
                         <div class="mb-3">
                             
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
@@ -95,10 +94,7 @@
                     <button type="submit" class="btn btn-primary waves-effect waves-light">Добавить</button>
                 </form>
 
-
-            
             </div>
-            
         </div>
     </div>
 </div>
@@ -113,7 +109,7 @@
             </div>
             <div class="modal-body p-4" id="modal-body">
                 <!-- Динамически создаваемые поля формы будут здесь -->
-                <form id="edit-form" method="put">
+                <form id="edit-form" method="PUT">
                     {% csrf_token %}
                     {% for field in edit_form %}
                     <div class="mb-3">
@@ -136,8 +132,6 @@
         </div>
     </div>
 </div>
-
-
 {% endblock %}
 
 
@@ -146,6 +140,8 @@
 <script src="{% static 'adminpanel/libs/sweetalert2/sweetalert2.all.min.js' %}"></script>
 <script src="{% static 'adminpanel/js/tableedit.init.js' %}"></script>
 <script>
+window.columns_verbose = {{ columns_verbose|safe }}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Обработчик для кнопок удаления
     var deleteButtons = document.querySelectorAll('.delete-object');
@@ -158,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
             {% else %}
             var objectName = objectRow.cells[0].textContent;
             {% endif %}
-            console.log(objectName)
             var pk = button.getAttribute('data-pk');
 
             // Всплывающее окно для подтверждения удаления
@@ -221,110 +216,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        fetch(form.action, {
-            method: form.method,
-            body: new FormData(form),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest', // Для поддержки запросов AJAX в Django
-                'X-CSRFToken': '{{ csrf_token }}' // CSRF токен для безопасности
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('123')
-            console.log(data)
-            console.log('123')
-            if (data.status === 'success') {
-                // Если добавление прошло успешно, обновляем страницу
-                Swal.fire(
-                    'Добавлено!',
-                    'Запись была успешно добавлена.',
-                    'success'
-                ).then(() => {
-                    window.location.reload();
-                });
-            } else {
-                console.log(data)
-                displayErrors(data);
-            }
-        })
-        .catch(error => {
-            Swal.fire(
-                'Ошибка!',
-                'Ошибка при добавлении записи: ' + error,
-                'error'
-            );
-        });
-    });
-});
-
-    </script>
-
-<script>
-
-
-// Функция для создания формы в модальном окне
-window.editColumns = {{ edit_columns|safe }};
-window.objects = {{ objects|safe }};
-window.field_types = {{ field_types|safe }};
-window.columns_verbose = {{ columns_verbose|safe }};
-
-window.rowDataGlobal = {}; 
-window.currentIdGlobal = 0;
-
-function displayErrors(response) {
-    var messageObject = JSON.parse(response.message);
-    var errors = Object.keys(messageObject).map(function(field) {
-        var verboseName = columns_verbose[field] || field;
-        verboseName = verboseName.charAt(0).toUpperCase() + verboseName.slice(1);
-        return '<strong>Ошибка в поле "' + verboseName + '":</strong><br>' + messageObject[field][0].message;
-    }).join('<br><br>');
-    
-    swal.fire({
-        title: "Обнаружены ошибки:",
-        html: errors,
-        icon: 'error'
-    });
-}
-
-function fillFormWithRowData() {
-  // Проверяем, существует ли глобальный объект с данными строки
-  if (rowDataGlobal) {
-    console.log(rowDataGlobal)
-    // Перебираем все ключи объекта rowDataGlobal
-    for (const key in rowDataGlobal) {
-      // Находим элемент формы, который соответствует ключу объекта
-      const input = document.querySelector(`#edit_id_${key}`);
-      console.log(input)
-      // Если элемент найден и не является undefined, устанавливаем его значение
-      if (input) {
-        console.log(rowDataGlobal[key])
-        input.value = rowDataGlobal[key];
-        console.log('gello' + input.value)
-      }
-    }
-  }
-}
-
 function toggleEditMode(button) {
     var row = button.closest('tr'); // Находим ближайшую строку к кнопке
     var rowData = {};
 
-    // Получаем заголовки столбцов таблицы
-    var headers = Array.from(document.querySelectorAll('#objectTable th')).map(function(th) {
-        return th.textContent.trim().toLowerCase(); // Приводим к нижнему регистру для сопоставления
-    });
+    // Получаем заголовки столбцов таблицы, игнорируя поле "#"
+    var headers = Array.from(document.querySelectorAll('#objectTable th'))
+        .map(function(th) {
+            var headerText = th.textContent.trim();
+            if (headerText !== '#') {
+                return headerText.toLowerCase(); // Приводим к нижнему регистру для сопоставления
+            }
+        })
+        .filter(header => header !== undefined);
 
-    // Итерируем по всем ячейкам строки
-    row.querySelectorAll('td:not(:last-child)').forEach(function(cell, index) {
+    // Итерируем по всем ячейкам строки, кроме ячейки с id="ignore_id", если она есть
+    row.querySelectorAll('td:not(:last-child):not([id="ignore_id"])').forEach(function(cell, index) {
         var headerValue = headers[index];
         // Используем объект columns_verbose для получения исходного названия поля по verbose_name
         var fieldName = Object.keys(columns_verbose).find(key => columns_verbose[key].toLowerCase() === headerValue);
@@ -336,28 +243,38 @@ function toggleEditMode(button) {
     window.rowDataGlobal = rowData;
     window.currentIdGlobal = row.getAttribute('dj_id');
     fillFormWithRowData();
+
 }
 
-// Функция для проверки изменений данных в форме
-function getChangedData(rowData) {
-  var changedData = {};
-  // Используем селекторы для получения элементов формы по их динамическим id
-  Object.keys(rowData).forEach(function(columnName) {
-    var input = document.getElementById('edit_id_' + columnName);
-    if (input && input.value.trim() !== rowData[columnName]) {
-      changedData[columnName] = input.value.trim();
+function fillFormWithRowData() {
+    // Проверяем, существует ли глобальный объект с данными строки
+    if (rowDataGlobal) {
+      // Перебираем все ключи объекта rowData
+      for (const key in rowDataGlobal) {
+        // Находим элемент формы, который соответствует ключу объекта
+        const input = document.querySelector(`#edit_id_${key}`);
+        // Если элемент найден и не является undefined, устанавливаем его значение
+        if (input) {
+          input.value = rowDataGlobal[key];
+        }
+      }
     }
-  });
-  console.log('hello');
-  console.log(rowData);
-  console.log(changedData);
-  console.log('hello');
-  return changedData;
-}
+  }
 
 
+function getChangedData(rowData) {
+    var changedData = {};
+    // Используем селекторы для получения элементов формы по их динамическим id
+    Object.keys(rowData).forEach(function(columnName) {
+      var input = document.getElementById('edit_id_' + columnName);
+      if (input && input.value.trim() !== rowData[columnName]) {
+        changedData[columnName] = input.value.trim();
+      }
+    });
+    return changedData;
+  }
 
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     var editForm = document.getElementById('edit-form');
     editForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -388,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Успех: вызываем swal с сообщением об успехе
                     Swal.fire({
                         title: 'Успех!',
-                        text: 'Форма успешно отправлена.',
+                        text: 'Данные успешно обновлены.',
                         icon: 'success'
                     }).then((result) => {
                         if (result.value) {
@@ -404,9 +321,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+  
+function displayErrors(response) {
+    var messageObject = JSON.parse(response.message);
+    var errors = Object.keys(messageObject).map(function(field) {
+        var verboseName = columns_verbose[field] || field;
+        verboseName = verboseName.charAt(0).toUpperCase() + verboseName.slice(1);
+        return '<strong>Ошибка в поле "' + verboseName + '":</strong><br>' + messageObject[field][0].message;
+    }).join('<br><br>');
+    
+    swal.fire({
+        title: "Обнаружены ошибки:",
+        html: errors,
+        icon: 'error'
+    });
+}
 
+document.addEventListener('DOMContentLoaded', function() {
+    var addForm = document.getElementById('add-form');
+    addForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(addForm);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', window.location.href, true);
+        xhr.setRequestHeader('X-CSRFToken', formData.get('csrfmiddlewaretoken'));
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Успех: вызываем swal с сообщением об успехе
+                Swal.fire({
+                    title: 'Успех!',
+                    text: 'Запись успешно добавлена.',
+                    icon: 'success'
+                }).then((result) => {
+                    if (result.value) {
+                        window.location.reload();
+                    }
+                });
+            } else {
+                var response = JSON.parse(xhr.responseText);
+                displayErrors(response);
+            }
+        };
+        xhr.send(formData);
+    });
+});
 
 </script>
-
 {% endblock %}
 

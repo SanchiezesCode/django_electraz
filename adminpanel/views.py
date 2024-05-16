@@ -51,6 +51,13 @@ def ShowProduct_add(request):
 
 
 
+# Пример использования в представлении crm_clients
+def crm_clients(request):
+    return HttpResponse('ok')
+
+def ShowManufacturer_country(request):
+
+    return HttpResponse('ok')
 
 def ShowCrm_leads(request):
     context = {
@@ -110,7 +117,7 @@ def parse_multipart_form_data(body):
     
     return query_dict
 
-def model_list_view(request, model, columns, form_columns=None, edit_columns=None, is_deletable=True, show_id=False):
+def model_list_view(request, model, columns, add_columns=None, edit_columns=None, is_deletable=True, show_id=False):
     model_name = model._meta.model_name
     model_name_verbose = model._meta.verbose_name
     model_name_verbose_plural = model._meta.verbose_name_plural
@@ -120,7 +127,7 @@ def model_list_view(request, model, columns, form_columns=None, edit_columns=Non
     objects = model.objects.all()
 
     if show_id:
-        columns_verbose = {id: '#'}
+        columns_verbose = {'id': '#'}
     else:
         columns_verbose = {}
     
@@ -157,56 +164,33 @@ def model_list_view(request, model, columns, form_columns=None, edit_columns=Non
                     values.append(value)
         objects_with_names.append(values)
 
-    if form_columns:
-        ModelForm = modelform_factory(model, fields=form_columns)
-        class UniqueNameModelForm(ModelForm):
+
+    if add_columns:
+        AddModelForm = modelform_factory(model, fields=add_columns)
+        class UniqueNameAddModelForm(AddModelForm):
             def clean_name(self):
                 name = self.cleaned_data.get('name')
                 if model.objects.filter(name=name).exists():
                     raise ValidationError(f'{model._meta.verbose_name.capitalize()} с именем "{name}" уже существует.')
                 return name
+
         if request.method == 'POST':
-            form = UniqueNameModelForm(request.POST)
-            try:
-                if form.is_valid():
-                    form.save()
-                    # Отправляем JSON-ответ в случае успеха
-                    print('11')
-                    return JsonResponse({'status': 'success', 'message': 'Запись успешно добавлена.'})
-                else:
-                    # Отправляем JSON-ответ с ошибками
-                    print('22')
-                    return JsonResponse({'status': 'error', 'message': form.errors.as_json()}, status=400)
-            except ValidationError as e:
-                print('33')
-                # Отправляем JSON-ответ с ошибкой валидации
-                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    else:
-        form = None
-
-    if request.method == 'DELETE':
-        # Получаем данные из тела запроса
-        data = json.loads(request.body)
-        pk = data.get('pk')
-
-        if pk is not None:
-            try:
-                # Получаем объект для удаления или возвращаем ошибку 404, если объект не найден
-                obj = get_object_or_404(model, pk=pk)
-                delete_value = getattr(obj, columns[1])
-                print(delete_value)
-                # Удаляем объект
-                obj.delete()
-                # Возвращаем успешный ответ
-                return JsonResponse({'message': f'Объект "{delete_value}" был успешно удален.'})
-            except model.DoesNotExist:
-                return JsonResponse({'error': 'Объект не найден.'}, status=404)
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=500)
+            # Создаем форму с данными из запроса
+            add_form = UniqueNameAddModelForm(request.POST)
+            if add_form.is_valid():
+                # Сохраняем данные формы в базе данных
+                add_form.save()
+                return JsonResponse({'status': 'success', 'message': 'Данные добавлены.'}, status=201)
+            else:
+                # Возвращаем ошибки валидации формы в виде JSON
+                return JsonResponse({'status': 'error', 'message': add_form.errors.as_json()}, status=400)
         else:
-            return JsonResponse({'error': 'Первичный ключ не предоставлен.'}, status=400)
+            # Создаем пустую форму
+            add_form = UniqueNameAddModelForm()
+    else:
+        add_form = None
 
-            
+
     if edit_columns:
         EditModelForm = modelform_factory(model, fields=edit_columns)
         class UniqueNameEditModelForm(EditModelForm):
@@ -233,8 +217,38 @@ def model_list_view(request, model, columns, form_columns=None, edit_columns=Non
                     return JsonResponse({'status': 'error', 'message': edit_form.errors.as_json()}, status=400)
             else:
                 return JsonResponse({'status': 'error', 'message': 'Первичный ключ не предоставлен.'}, status=400)
+        else:
+            # Создаем пустую форму
+            edit_form = UniqueNameEditModelForm()
     else:
         edit_form = None
+
+
+
+    if request.method == 'DELETE':
+        # Получаем данные из тела запроса
+        data = json.loads(request.body)
+        pk = data.get('pk')
+
+        if pk is not None:
+            try:
+                # Получаем объект для удаления или возвращаем ошибку 404, если объект не найден
+                obj = get_object_or_404(model, pk=pk)
+                delete_value = getattr(obj, columns[1])
+                print(delete_value)
+                # Удаляем объект
+                obj.delete()
+                # Возвращаем успешный ответ
+                return JsonResponse({'message': f'Объект "{delete_value}" был успешно удален.'})
+            except model.DoesNotExist:
+                return JsonResponse({'error': 'Объект не найден.'}, status=404)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse({'error': 'Первичный ключ не предоставлен.'}, status=400)
+
+            
+
         
 
 
@@ -257,11 +271,6 @@ def model_list_view(request, model, columns, form_columns=None, edit_columns=Non
     field_types = {field.name: type(field).__name__ for field in instance._meta.fields}
 
 
-    # Передаем сообщения в шаблон в формате JSON
-    message_data = json.dumps([{
-        'level': message.level_tag,
-        'text': message.message,
-    } for message in messages.get_messages(request)], cls=DjangoJSONEncoder)
 
     context = {
         'model_name': model_name,
@@ -272,44 +281,27 @@ def model_list_view(request, model, columns, form_columns=None, edit_columns=Non
         'columns': columns,
         'columns_verbose': columns_verbose,
         'edit_columns': edit_columns,
+        'add_columns': add_columns,
         'objects': objects_with_names,
-        'form': form,
+        'add_form': add_form,
         'edit_form': edit_form,
         'is_deletable': is_deletable,
         'show_id': show_id,
         'field_types': field_types,
-        'message_data_json': message_data  # Добавлено для SweetAlert
     }
 
     return render(request, 'adminpanel/base_for_models.html', context)
 
 
 
-
-# Пример использования в представлении crm_clients
-def crm_clients(request):
-    model = Client
-    table_columns = ['first_name', 'email', 'phone_number']
-    edit_columns = ['first_name', 'email', 'phone_number']
-    form_columns = ['first_name', 'email', 'phone_number']
-    return model_list_view(request, model, table_columns, form_columns, edit_columns)
-
-def ShowManufacturer_country(request):
-    model = ManufacturerProduct
-    table_columns = ['name', 'country']
-    is_deletable = True
-    edit_columns = table_columns
-    form_columns = ['name', 'country']
-    return model_list_view(request, model, table_columns, form_columns, edit_columns, is_deletable)
-
 def ShowSupplier_list(request):
     model = Supplier
-    columns = ['link', 'name']
-    show_id = False
-    edit_columns = None
-    is_deletable = False
-    form_columns = None
-    return model_list_view(request, model, columns, form_columns, edit_columns, is_deletable, show_id)
+    columns = ['name', 'link']
+    show_id = True
+    edit_columns = ['name', 'link']
+    is_deletable = True
+    add_columns = ['name', 'link']
+    return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
 
 
     

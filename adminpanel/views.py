@@ -124,6 +124,18 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
 
     objects = model.objects.all()
 
+    if columns == 'all':
+        columns = [field.name for field in model._meta.fields][1:]
+    if add_columns == 'all':
+        add_columns = [field.name for field in model._meta.fields][1:]
+    if edit_columns == 'all':
+        edit_columns = [field.name for field in model._meta.fields][1:]
+    if add_columns is not None:
+        required_fields = [field.name for field in model._meta.fields if field.blank is False and field.null is False]
+        missing_required_fields = set(required_fields) - set(add_columns)
+        if missing_required_fields:
+            add_columns.extend(missing_required_fields)
+
     if show_id:
         columns_verbose = {'id': '#'}
     else:
@@ -136,7 +148,7 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
     # Добавляем столбец 'id' в начало списка, если его там нет
     if 'id' not in columns:
         columns = ['id'] + columns
-
+    print(columns)
     objects_with_names = []
     for obj in objects:
         values = []
@@ -283,7 +295,7 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
 
 def ShowSupplier_list(request):
     model = Supplier
-    columns = ['name', 'link']
+    columns = True
     show_id = True
     edit_columns = ['name', 'link']
     is_deletable = True
@@ -293,10 +305,10 @@ def ShowSupplier_list(request):
 
 def ShowManufacturer_country(request):
     model = ManufacturerProduct
-    columns = ['name', 'country']
+    columns = 'all'
     show_id = True
-    edit_columns = ['name', 'country']
+    edit_columns = 'all'
     is_deletable = True
-    add_columns = ['name', 'country']
+    add_columns = 'all'
     return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
 

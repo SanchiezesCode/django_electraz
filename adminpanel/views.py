@@ -132,17 +132,7 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
     for field_name in columns:
         field = model._meta.get_field(field_name)
         columns_verbose[field_name] = field.verbose_name
-
-    if edit_columns:
-        EditModelForm = modelform_factory(model, fields=edit_columns)
-        edit_form = EditModelForm()
-        class UniqueNameEditModelForm(EditModelForm):
-            def clean_name(self):
-                name = self.cleaned_data.get('name')
-                if model.objects.filter(name=name).exists():
-                    raise ValidationError(f'{model._meta.verbose_name.capitalize()} с именем "{name}" уже существует.')
-                return name
-            
+     
     # Добавляем столбец 'id' в начало списка, если его там нет
     if 'id' not in columns:
         columns = ['id'] + columns
@@ -187,7 +177,6 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
             add_form = UniqueNameAddModelForm()
     else:
         add_form = None
-
 
     if edit_columns:
         EditModelForm = modelform_factory(model, fields=edit_columns)

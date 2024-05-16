@@ -55,9 +55,7 @@ def ShowProduct_add(request):
 def crm_clients(request):
     return HttpResponse('ok')
 
-def ShowManufacturer_country(request):
 
-    return HttpResponse('ok')
 
 def ShowCrm_leads(request):
     context = {
@@ -304,4 +302,12 @@ def ShowSupplier_list(request):
     return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
 
 
-    
+def ShowManufacturer_country(request):
+    model = ManufacturerProduct
+    columns = ['name', 'country']
+    show_id = True
+    edit_columns = ['name', 'country']
+    is_deletable = True
+    add_columns = ['name', 'country']
+    return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
+

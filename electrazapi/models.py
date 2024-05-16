@@ -15,11 +15,23 @@ class Country(models.Model):
 
 class ManufacturerProduct(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name='производитель')
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, verbose_name='страна')
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = 'производитель'
+        verbose_name_plural = 'производители'
+
+    @classmethod
+    def get_verbose_name_table(self):
+        return "производителей"
+    
+    @classmethod
+    def get_verbose_name_table_add(self):
+        return "производителя"
 
 class Supplier(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='поставщик')

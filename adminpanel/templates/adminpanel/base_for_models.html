@@ -247,32 +247,43 @@ function toggleEditMode(button) {
 }
 
 function fillFormWithRowData() {
-    // Проверяем, существует ли глобальный объект с данными строки
     if (rowDataGlobal) {
-      // Перебираем все ключи объекта rowData
-      for (const key in rowDataGlobal) {
-        // Находим элемент формы, который соответствует ключу объекта
-        const input = document.querySelector(`#edit_id_${key}`);
-        // Если элемент найден и не является undefined, устанавливаем его значение
-        if (input) {
-          input.value = rowDataGlobal[key];
+        console.log(rowDataGlobal);
+        for (const key in rowDataGlobal) {
+            const input = document.querySelector(`#edit_id_${key}`);
+            if (input) {
+                if (input.tagName === 'SELECT') {
+                    input.selectedIndex = Array.from(input.options).findIndex(option => option.textContent.trim() === rowDataGlobal[key]);
+                } else {
+                    input.value = rowDataGlobal[key];
+                }
+            }
         }
-      }
     }
-  }
+}
 
+function getChangedData() {
+    if (rowDataGlobal) {
+        const changedValues = {};
+        for (const key in rowDataGlobal) {
+            const input = document.querySelector(`#edit_id_${key}`);
+            if (input) {
+                let isValueChanged = false;
+                if (input.tagName === 'SELECT') {
+                    const selectedOption = input.options[input.selectedIndex];
+                    isValueChanged = selectedOption.textContent.trim() !== rowDataGlobal[key];
+                } else {
+                    isValueChanged = input.value.trim() !== rowDataGlobal[key];
+                }
+                if (isValueChanged) {
+                    changedValues[key] = input.value.trim();
+                }
+            }
+        }
+        return changedValues;
+    }
+}
 
-function getChangedData(rowData) {
-    var changedData = {};
-    // Используем селекторы для получения элементов формы по их динамическим id
-    Object.keys(rowData).forEach(function(columnName) {
-      var input = document.getElementById('edit_id_' + columnName);
-      if (input && input.value.trim() !== rowData[columnName]) {
-        changedData[columnName] = input.value.trim();
-      }
-    });
-    return changedData;
-  }
 
   document.addEventListener('DOMContentLoaded', function() {
     var editForm = document.getElementById('edit-form');
@@ -280,7 +291,6 @@ function getChangedData(rowData) {
         e.preventDefault();
         // Получаем измененные данные, используя глобальные исходные данные
         var changedData = getChangedData(rowDataGlobal);
-        
         // Проверяем, есть ли изменения
         if (Object.keys(changedData).length === 0) {
             // Если изменений нет, закрываем модальное окно

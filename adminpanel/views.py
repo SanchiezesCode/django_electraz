@@ -245,39 +245,13 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
                 return JsonResponse({'error': str(e)}, status=500)
         else:
             return JsonResponse({'error': 'Первичный ключ не предоставлен.'}, status=400)
-
-            
-
         
-
-
-
-
-
-        
-
-    
-    def get_field_types(model):
-        field_types = {}
-        for field in model._meta.fields:
-            field_name = field.name
-            field_type = field.get_internal_type()
-            base_classes = [base.__name__ for base in field.__class__.__bases__]
-            print(f"Field: {field_name}, Type: {field_type}, Base classes: {base_classes}")
-            field_types[field_name] = field_type
-        return field_types
-    instance = model()
-    field_types = {field.name: type(field).__name__ for field in instance._meta.fields}
-
-
-
     context = {
         'model_name': model_name,
         'model_name_verbose': model_name_verbose,
         'model_name_verbose_plural': model_name_verbose_plural,
         'model_name_verbose_name_table':model_name_verbose_name_table,
         'model_name_verbose_name_table_add':model_name_verbose_name_table_add,
-        'columns': columns,
         'columns_verbose': columns_verbose,
         'edit_columns': edit_columns,
         'add_columns': add_columns,
@@ -286,12 +260,9 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
         'edit_form': edit_form,
         'is_deletable': is_deletable,
         'show_id': show_id,
-        'field_types': field_types,
     }
 
     return render(request, 'adminpanel/base_for_models.html', context)
-
-
 
 def ShowSupplier_list(request):
     model = Supplier

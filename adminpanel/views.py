@@ -6,7 +6,9 @@ from django.http import HttpResponse, JsonResponse, QueryDict
 from django.forms import modelform_factory
 from django.core.exceptions import ValidationError
 
+from products.models import  Product, ProductCategory, ProductManufacturer, ProductSupplier
 from services.models import ServiceCategory, Service
+from locations.models import City, Country, LineMetro, Metro
 
 def parse_multipart_form_data(body):
     # Разделяем тело запроса по уникальному разделителю
@@ -52,7 +54,10 @@ def model_list_view(request, model, columns='all', add_columns=None, edit_column
     model_name_verbose_name_table_add = model.get_verbose_name_table_add()
     model_name_verbose_name_table = model.get_verbose_name_table()
 
+    
     objects = model.objects.all()
+    if model == ProductCategory:
+        objects = model.objects.all()[1:]
 
     if columns == 'all':
         columns = [field.name for field in model._meta.fields][1:]
@@ -207,4 +212,62 @@ def ShowServices(request):
     columns = 'all'
     add_columns = columns
     edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+
+def ShowCountrys(request):
+    model = Country
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowCitys(request):
+    model = City
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowLinesMetro(request):
+    model = LineMetro
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowMetros(request):
+    model = Metro
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowProductSupplier(request):
+    model = ProductSupplier
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+
+def ShowProductCategory(request):
+    model = ProductCategory
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowProductManufacturer(request):
+    model = ProductManufacturer
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
+
+def ShowProducts(request):
+    model = Product
+    columns = ['name', 'category', 'manufacturer', 'price', 'old_price', 'price_updated_at', 'additional_info', 'slug', 'availability']
+    add_columns = ['name', 'category', 'manufacturer', 'price', 'old_price', 'additional_info', 'slug', 'availability']
+    edit_columns = add_columns
     return model_list_view(request, model, columns, add_columns, edit_columns)

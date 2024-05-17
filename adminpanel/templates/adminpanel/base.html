@@ -76,7 +76,7 @@
                             <div class="collapse" id="menuEcommerce">
                                 <ul class="sub-menu">
                                     <li class="menu-item">
-                                        <a href="" class="menu-link">
+                                        <a href="{% url "products" %}" class="menu-link">
                                             <span class="menu-text">Товары</span>
                                         </a>
                                     </li>
@@ -86,22 +86,17 @@
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="" class="menu-link">
+                                        <a href="{% url "product_categorys" %}" class="menu-link">
                                             <span class="menu-text">Категории товаров</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="" class="menu-link">
+                                        <a href="{% url "product_manufacturer" %}" class="menu-link">
                                             <span class="menu-text">Производители товаров</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="" class="menu-link">
-                                            <span class="menu-text">Страны производителей</span>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item">
-                                        <a href="" class="menu-link">
+                                        <a href="{% url "product_suppliers" %}" class="menu-link">
                                             <span class="menu-text">Поставщики</span>
                                         </a>
                                     </li>
@@ -156,6 +151,47 @@
                                         </a>
                                     </li>
 
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="menu-item">
+                            <a href="#menuOther" data-bs-toggle="collapse" class="menu-link">
+                                <span class="menu-icon"><i class="mdi mdi-map-marker"></i></span>
+                                <span class="menu-text"> Расположение </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="menuOther">
+                                <ul class="sub-menu">
+                                    <li class="menu-item">
+                                        <a href="{% url "countrys" %}" class="menu-link">
+                                            <span class="menu-text">Cтраны</span>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item">
+                                        <a href="{% url "citys" %}" class="menu-link">
+                                            <span class="menu-text">Города</span>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item">
+                                        <a href="#menuMetros" data-bs-toggle="collapse" class="menu-link collapsed" aria-expanded="false">
+                                            <span class="menu-text"> Метро </span>
+                                            <span class="menu-arrow"></span>
+                                        </a>
+                                        <div class="collapse" id="menuMetros" style="">
+                                            <ul class="sub-menu">
+                                                <li class="menu-item">
+                                                    <a href="{% url "linesmetro" %}" class="menu-link">
+                                                        <span class="menu-text">Линии метро</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item">
+                                                    <a href="{% url "metros" %}" class="menu-link">
+                                                        <span class="menu-text">Станции метро</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
                                 </ul>
                             </div>
                         </li>

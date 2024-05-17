@@ -8,6 +8,21 @@ urlpatterns = [
     path('service_categorys/', ShowServiceCategorys, name='service_categorys'),
     path('services', ShowServices, name='services'),
 
+    path('metro/lines', ShowLinesMetro, name='linesmetro'),
+    path('metro/', ShowMetros, name='metros'),
+    path('countrys', ShowCountrys, name='countrys'),
+    path('citys', ShowCitys, name='citys'),
+
+    path('product_suppliers', ShowProductSupplier, name='product_suppliers'),
+    path('product_categorys/', ShowProductCategory, name='product_categorys'),
+    path('product_manufacturer/', ShowProductManufacturer, name='product_manufacturer'),
+    path('products/', ShowProducts, name='products'),
+
+    
+
+
+
+
 
     # path('product_list/', ShowProduct_list, name='product_list'),
     # path('product_category/', ShowProduct_category, name='product_category'),

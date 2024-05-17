@@ -1,4 +1,3 @@
-from itertools import count
 from django.db import models
 
 class ServiceCategory(models.Model):
@@ -17,12 +16,12 @@ class ServiceCategory(models.Model):
     
     @classmethod
     def get_verbose_name_table_add(self):
-        return "категории"
+        return "категорию"
 
 class Service(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name='услуга')
     category = models.ForeignKey(ServiceCategory, verbose_name = "категория", on_delete=models.CASCADE)
-    cost = models.PositiveIntegerField(verbose_name='цена', blank=True, default=0)
+    cost = models.PositiveIntegerField(verbose_name='цена', default=0)
     UNIT_TYPE_CHOICES = (
         ('м.', 'м.'),
         ('шт.', 'шт.')
@@ -42,4 +41,4 @@ class Service(models.Model):
     
     @classmethod
     def get_verbose_name_table_add(self):
-        return "услуги"
+        return "услугу"

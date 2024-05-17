@@ -76,32 +76,32 @@
                             <div class="collapse" id="menuEcommerce">
                                 <ul class="sub-menu">
                                     <li class="menu-item">
-                                        <a href="{% url 'product_list' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Товары</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'product_add' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Добавить товар</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'product_category' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Категории товаров</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'product_manufacturer' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Производители товаров</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'manufacturer_country' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Страны производителей</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'supplier_list' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Поставщики</span>
                                         </a>
                                     </li>
@@ -118,20 +118,44 @@
                             <div class="collapse" id="menuCrm">
                                 <ul class="sub-menu">
                                     <li class="menu-item">
-                                        <a href="{% url 'crm_clients' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Клиенты</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'crm_leads' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Заявки</span>
                                         </a>
                                     </li>
                                     <li class="menu-item">
-                                        <a href="{% url 'crm_add' %}" class="menu-link">
+                                        <a href="" class="menu-link">
                                             <span class="menu-text">Новый клиент</span>
                                         </a>
                                     </li>
+                                </ul>
+                            </div>
+                        </li>
+
+
+                        <li class="menu-item">
+                            <a href="#menuCrm" data-bs-toggle="collapse" class="menu-link">
+                                <span class="menu-icon"><i class="mdi mdi-account-multiple-outline"></i></span>
+                                <span class="menu-text"> Услуги </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="menuCrm">
+                                <ul class="sub-menu">
+                                    <li class="menu-item">
+                                        <a href="{% url "services" %}" class="menu-link">
+                                            <span class="menu-text">Список услуг</span>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item">
+                                        <a href="{% url "service_categorys" %}" class="menu-link">
+                                            <span class="menu-text">Категории услуг</span>
+                                        </a>
+                                    </li>
+
                                 </ul>
                             </div>
                         </li>

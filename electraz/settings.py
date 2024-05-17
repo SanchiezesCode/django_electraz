@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'adminpanel.apps.AdminpanelConfig',
     'electrazapi.apps.ElectrazapiConfig',
     'rest_framework',
+
+    'services',
 ]
 
 MIDDLEWARE = [

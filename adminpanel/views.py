@@ -1,89 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse  # добавьте этот импорт
-from django.http import HttpResponse, JsonResponse, QueryDict
-from electrazapi.models import Client, ManufacturerProduct, Supplier, asdf
-from django.urls import reverse_lazy
-from django.db import IntegrityError
-from django.views.generic import ListView
-from django.views.generic import TemplateView
-from django.forms import modelform_factory
 import re
-from django.contrib import messages
-from django.core.serializers.json import DjangoJSONEncoder
+import json
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse, QueryDict
+from django.forms import modelform_factory
 from django.core.exceptions import ValidationError
 
-import json
-import logging
-maindata = {
-
-}
- 
-def index(request):
-    context = {
-        'title' : 'Статистика',
-    }
-    return render(request, "adminpanel/index.html", context = context)
-
-def ShowProduct_list(request):
-    context = {
-        'title' : 'Список товаров',
-    }
-    return render(request, "adminpanel/product_list.html", context = context)
-
-def ShowProduct_category(request):
-    context = {
-        'title': 'Категории товаров',
-    }
-    return render(request, "adminpanel/product_category.html", context=context)
-
-def ShowProduct_manufacturer(request): 
-    context = {
-        'title': 'Производители',
-    }
-    return render(request, "adminpanel/product_manufacturer.html", context=context)
-
-def ShowProduct_add(request): 
-    context = {
-        'title': 'Добавить товар',
-    }
-    
-    return render(request, "adminpanel/product_add.html", context=context)
-
-
-
-# Пример использования в представлении crm_clients
-def crm_clients(request):
-    return HttpResponse('ok')
-
-
-
-def ShowCrm_leads(request):
-    context = {
-        'title' : 'Заявки',
-    }
-    return render(request, "adminpanel/crm_leads.html", context = context)
-
-def ShowCrm_add(request):
-    context = {
-        'title' : 'Новый клиент',
-    }
-    return render(request, "adminpanel/crm_add.html", context = context)
-
-def ShowMainCalcPage(request):
-
-    return render(request, "adminpanel/maincalc.html")
-
-def upload_file(request):
-    if request.method == 'POST':
-        myfile = request.FILES['myfile']
-
-        print('Hello World!')
-        # Далее можно обработать загруженный файл, например, сохранить его на сервере или выполнить какие-то другие действия
-        return HttpResponse('Файл успешно загружен.')
-    return render(request, 'upload.html')
-
-def get_column_value(obj, column):
-    return obj.get(column, '')
+from services.models import ServiceCategory, Service
 
 def parse_multipart_form_data(body):
     # Разделяем тело запроса по уникальному разделителю
@@ -115,7 +38,14 @@ def parse_multipart_form_data(body):
     
     return query_dict
 
-def model_list_view(request, model, columns, add_columns=None, edit_columns=None, is_deletable=True, show_id=False):
+
+def index(request):
+    context = {
+        'title' : 'Статистика',
+    }
+    return render(request, "adminpanel/index.html", context = context)
+
+def model_list_view(request, model, columns='all', add_columns=None, edit_columns=None, is_deletable=True, show_id=False):
     model_name = model._meta.model_name
     model_name_verbose = model._meta.verbose_name
     model_name_verbose_plural = model._meta.verbose_name_plural
@@ -264,22 +194,17 @@ def model_list_view(request, model, columns, add_columns=None, edit_columns=None
 
     return render(request, 'adminpanel/base_for_models.html', context)
 
-def ShowSupplier_list(request):
-    model = Supplier
-    columns = True
-    show_id = True
-    edit_columns = ['name', 'link']
-    is_deletable = True
-    add_columns = ['name', 'link']
-    return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
 
-
-def ShowManufacturer_country(request):
-    model = ManufacturerProduct
+def ShowServiceCategorys(request):
+    model = ServiceCategory
     columns = 'all'
-    show_id = True
-    edit_columns = 'all'
-    is_deletable = True
-    add_columns = 'all'
-    return model_list_view(request, model, columns, add_columns, edit_columns, is_deletable, show_id)
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)
 
+def ShowServices(request):
+    model = Service
+    columns = 'all'
+    add_columns = columns
+    edit_columns = columns
+    return model_list_view(request, model, columns, add_columns, edit_columns)

@@ -101,13 +101,21 @@ class Product(models.Model):
 
         if self.pk:
             # Объект модели уже существует
-            previous_price = self.old_price
-
+            previous_price = Product.objects.get(pk=self.pk).price
+            super().save(*args, **kwargs)
 
             if self.price != previous_price:
-                self.old_price = Product.objects.get(pk=self.pk).price
+                self.old_price = previous_price
                 self.price_updated_at = timezone.now()
                 super().save(*args, **kwargs)
+        else:
+            print('yes')
+            print('yes')
+            print(self.old_price)
+            print('yes')
+            print('yes')
+            self.old_price = self.price
+            super().save(*args, **kwargs)
 
 
     @classmethod
